@@ -3,41 +3,40 @@ import puppeteer, { Browser, Page } from 'puppeteer';
 const runScraper = async (): Promise<void> => {
     let browser: Browser | null = null;
     try {
-        // Launch the browser and open a new blank page
         browser = await puppeteer.launch();
         const page: Page = await browser.newPage();
 
-        // Navigate the page to a URL
-        await page.goto('https://developer.chrome.com/');
+        await page.goto('https://www.google.com/');
 
-        // Set screen size
         await page.setViewport({ width: 1080, height: 1024 });
 
-        // Type into search box
-        await page.locator('.devsite-search-field').fill('automate beyond recorder');
+        await page.type('textarea', 'github');
 
-        // Wait and click on first result
-        await page.locator('.devsite-result-item-link').click();
+        await Promise.all([
+            page.keyboard.press('Enter'),
+            page.waitForNavigation(),
+        ]);
 
-        // Locate the full title with a unique string
-        const textSelector = await page
-            .locator('text/Customize and automate')
-            .waitHandle();
+        const topLinks = await page.evaluate(() => {
+            const translateRegex = /translate|traducir|traduire|übersetzen|翻訳|перевести|翻譯|번역/i;
 
-        const fullTitle: string | null = await textSelector?.evaluate(
-            (el: Element) => el.textContent
-        );
+            const results = [...document.querySelectorAll('#search a')] as HTMLElement[];
+            return results
+                .map(el => [el.innerText, el.getAttribute('href')])
+                .filter(([title]) => title && !translateRegex.test(title));
+        });
 
-        // Print the full title
-        if (fullTitle) {
-            console.log('The title of this blog post is "%s".', fullTitle);
+        if (topLinks.length > 0) {
+            console.log('Top search results:');
+            topLinks.forEach(([title, link], index) => {
+                console.log(`${index + 1}. ${title?.replace(/\n/g, '')} - ${link}`);
+            });
         } else {
-            console.log('Title not found');
+            console.log('No search results found');
         }
     } catch (error) {
         console.error('An error occurred:', error);
     } finally {
-        // Ensure the browser is closed even if an error occurs
         if (browser) {
             await browser.close();
         }
