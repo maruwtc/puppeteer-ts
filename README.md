@@ -3,12 +3,12 @@ Puppeteer with Typescript
 
 # Usage
 
-```
+```bash
 pnpm install
 pnpm start
 ```
 
-```
+```typescript
 // Navigate the page to a URL
 await page.goto('https://developer.chrome.com/');
 
